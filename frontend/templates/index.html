@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Proyecto Análisis de Algoritmos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 2rem; background-color: #f8f9fa; }
+        .container { max-width: 960px; }
+        .card { margin-bottom: 2rem; }
+        #scraper-output, #similarity-results, #frequency-results {
+            background-color: #212529;
+            color: #f8f9fa;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 0.25rem;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1>Proyecto de Análisis Bibliométrico</h1>
+            <p class="lead">Interfaz para la ejecución de los requerimientos del proyecto.</p>
+        </div>
+
+        <!-- Requerimiento 1: Descarga de Datos -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Requerimiento 1: Automatización de Descarga de Datos</h3>
+            </div>
+            <div class="card-body">
+                <form id="scraper-form">
+                    <div class="mb-3">
+                        <label for="database" class="form-label">Base de Datos</label>
+                        <select class="form-select" id="database" name="database" required>
+                            <option value="sage">SAGE</option>
+                            <option value="ieee">IEEE Xplore</option>
+                            <option value="sciencedirect">ScienceDirect</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Correo Institucional (@uqvirtual.edu.co)</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="run-scraper-btn">
+                        <span id="scraper-spinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                        Ejecutar Scraper
+                    </button>
+                </form>
+                <hr>
+                <h5>Salida del Proceso:</h5>
+                <pre id="scraper-output">Aquí se mostrará la salida del script...</pre>
+            </div>
+        </div>
+
+        <!-- Requerimiento 2: Análisis de Similitud -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Requerimiento 2: Análisis de Similitud Textual</h3>
+            </div>
+            <div class="card-body">
+                <p>Selecciona dos artículos de la lista para calcular la similitud entre sus abstracts.</p>
+                <button class="btn btn-info mb-3" id="load-articles-btn">
+                    <span id="articles-spinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                    Cargar Artículos
+                </button>
+                
+                <div id="similarity-form-container" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="article1-select" class="form-label">Artículo 1</label>
+                            <select id="article1-select" class="form-select"></select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="article2-select" class="form-label">Artículo 2</label>
+                            <select id="article2-select" class="form-select"></select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="algorithm-select" class="form-label">Algoritmo de Similitud</label>
+                        <select id="algorithm-select" class="form-select">
+                            <option value="levenshtein">Distancia de Levenshtein</option>
+                            <option value="coseno">Similitud de Coseno (TF-IDF)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" id="calculate-similarity-btn">Calcular Similitud</button>
+                </div>
+                
+                <hr id="similarity-hr" style="display: none;">
+                <h5 id="similarity-results-title" style="display: none;">Resultado del Análisis:</h5>
+                <pre id="similarity-results" style="display: none;"></pre>
+            </div>
+        </div>
+
+        <!-- Requerimiento 3: Análisis de Frecuencia (Placeholder) -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Requerimiento 3: Análisis de Frecuencia de Palabras</h3>
+            </div>
+            <div class="card-body text-muted">
+                <p>Esta sección permitirá ejecutar un análisis de frecuencia de palabras sobre los resúmenes de los artículos descargados.</p>
+                <button class="btn btn-secondary" disabled>Próximamente</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Lógica para Requerimiento 1 ---
+        document.getElementById('scraper-form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const outputElement = document.getElementById('scraper-output');
+            const submitButton = document.getElementById('run-scraper-btn');
+            const spinner = document.getElementById('scraper-spinner');
+
+            outputElement.textContent = 'Iniciando proceso de scraping...\n';
+            submitButton.disabled = true;
+            spinner.style.display = 'inline-block';
+
+            try {
+                const response = await fetch('/run-scraper', { method: 'POST', body: formData });
+                const result = await response.json();
+                outputElement.textContent = response.ok ? result.message : `Error: ${result.error || 'Ocurrió un error desconocido.'}`;
+            } catch (error) {
+                outputElement.textContent += `\n\n--- ERROR DE RED ---\n${error.message}`;
+            } finally {
+                submitButton.disabled = false;
+                spinner.style.display = 'none';
+            }
+        });
+
+        // --- Lógica para Requerimiento 2 ---
+        const loadArticlesBtn = document.getElementById('load-articles-btn');
+        const articlesSpinner = document.getElementById('articles-spinner');
+        const similarityFormContainer = document.getElementById('similarity-form-container');
+        const article1Select = document.getElementById('article1-select');
+        const article2Select = document.getElementById('article2-select');
+        const algorithmSelect = document.getElementById('algorithm-select');
+        const calculateSimilarityBtn = document.getElementById('calculate-similarity-btn');
+        const similarityResults = document.getElementById('similarity-results');
+        const similarityHr = document.getElementById('similarity-hr');
+        const similarityResultsTitle = document.getElementById('similarity-results-title');
+
+        loadArticlesBtn.addEventListener('click', async () => {
+            loadArticlesBtn.disabled = true;
+            articlesSpinner.style.display = 'inline-block';
+            similarityResults.style.display = 'none';
+            similarityHr.style.display = 'none';
+            similarityResultsTitle.style.display = 'none';
+
+            try {
+                const response = await fetch('/articulos');
+                const articles = await response.json();
+
+                if (!response.ok) {
+                    alert(articles.error || 'No se pudieron cargar los artículos.');
+                    return;
+                }
+
+                article1Select.innerHTML = '<option selected disabled>Selecciona un artículo...</option>';
+                article2Select.innerHTML = '<option selected disabled>Selecciona un artículo...</option>';
+
+                articles.forEach(article => {
+                    const option1 = new Option(`${article.id} - ${article.title}`, article.id);
+                    const option2 = new Option(`${article.id} - ${article.title}`, article.id);
+                    article1Select.add(option1);
+                    article2Select.add(option2);
+                });
+
+                similarityFormContainer.style.display = 'block';
+                loadArticlesBtn.textContent = 'Volver a Cargar Artículos';
+
+            } catch (error) {
+                alert(`Error de red al cargar artículos: ${error.message}`);
+            } finally {
+                loadArticlesBtn.disabled = false;
+                articlesSpinner.style.display = 'none';
+            }
+        });
+
+        calculateSimilarityBtn.addEventListener('click', async () => {
+            const id1 = article1Select.value;
+            const id2 = article2Select.value;
+            const algoritmo = algorithmSelect.value;
+
+            if (!id1 || !id2 || id1 === id2) {
+                alert('Por favor, selecciona dos artículos diferentes para comparar.');
+                return;
+            }
+
+            calculateSimilarityBtn.disabled = true;
+            similarityResults.style.display = 'block';
+            similarityHr.style.display = 'block';
+            similarityResultsTitle.style.display = 'block';
+            similarityResults.textContent = `Calculando similitud con ${algoritmo}...`;
+
+            try {
+                const response = await fetch('/analizar-similitud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ article_ids: [id1, id2], algoritmo: algoritmo })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    similarityResults.textContent = `Error: ${result.error || 'Error desconocido.'}`;
+                } else {
+                    similarityResults.textContent = JSON.stringify(result, null, 4);
+                }
+
+            } catch (error) {
+                similarityResults.textContent = `Error de red: ${error.message}`;
+            } finally {
+                calculateSimilarityBtn.disabled = false;
+            }
+        });
+
+    </script>
+</body>
+</html>
